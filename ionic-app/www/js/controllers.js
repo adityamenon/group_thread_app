@@ -101,6 +101,18 @@ angular.module('gta.controllers', [])
     maximumAge: 250,
     enableHighAccuracy: true
   });
-  $scope.myCoords = $geolocation.position.coords; // this is regularly updated
   $scope.gpsError = $geolocation.position.error; // this becomes truthy, and has 'code' and 'message' if an error occurs
+  $scope.myPosition = $geolocation.position;
+
+  $scope.$watch('myPosition.coords', function (newValue, oldValue) {
+    if (newValue !== undefined && newValue.latitude && newValue.longitude) {
+      $scope.map = {
+        center: {
+          latitude: newValue.latitude,
+          longitude: newValue.longitude
+        },
+        zoom: 16
+      };
+    }
+  }, true);
 });
