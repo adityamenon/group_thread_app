@@ -5,7 +5,10 @@
     </div>
 
     <div ng-hide="{{gpsError}}">
-        <ui-gmap-google-map center='map.center' zoom='map.zoom'></ui-gmap-google-map>
+        <ui-gmap-google-map center='map.center' zoom='map.zoom'>
+            <ui-gmap-marker coords="marker.coords" idkey="loginData.user.username">
+            </ui-gmap-marker>
+        </ui-gmap-google-map>
     </div>
   </ion-content>
 </ion-view>

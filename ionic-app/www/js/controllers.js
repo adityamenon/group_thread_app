@@ -1,8 +1,6 @@
 var dsanon = new deepstream('127.0.0.1:6030').login();
 
-angular.module('gta.controllers', [])
-
-.controller('MainCtrl', function ($scope, LoginData) {
+angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, LoginData) {
   $scope.loginData = LoginData;
   $scope.$watch(
     function () {
@@ -11,9 +9,54 @@ angular.module('gta.controllers', [])
     function (newVal) {
       $scope.loginData = newVal;
     });
-})
+}).controller('WTFCtrl', function ($scope, $state, uiGmapGoogleMapApi) {
+  var geoOptions = {
+    enableHighAccuracy: true,
+    maximumAge: 6000,
+    timeout: 5400
+  };
 
-.controller('WelcomeCtrl', function(
+  $scope.map = {
+    center: {
+      latitude: null,
+      longitude: null
+    },
+    zoom: 18
+  };
+
+  $scope.marker = {
+    coords: {
+      latitude: null,
+      longitude: null
+    }
+  };
+
+  if ($scope.loginData.status !== true) $state.go('tab.welcome');
+
+  uiGmapGoogleMapApi.then(function (maps) {
+    navigator.geolocation.watchPosition(
+      function (p) {
+        console.log(p);
+
+        $scope.$apply(function () {
+          $scope.map.center.latitude = p.coords.latitude;
+          $scope.map.center.longitude = p.coords.longitude;
+
+          $scope.marker.coords.latitude = p.coords.latitude;
+          $scope.marker.coords.longitude = p.coords.longitude;
+
+          dsanon.record.getRecord("user/"+$scope.loginData.user.username).set('coords.latitude', p.coords.latitude);
+          dsanon.record.getRecord("user/"+$scope.loginData.user.username).set('coords.longitude', p.coords.longitude);
+        });
+      },
+      function (e) {
+        console.log(e);
+        $scope.gpsError = e;
+      },
+      geoOptions
+    );
+  });
+}).controller('WelcomeCtrl', function(
   $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData
 ) {
   if (LoginData.status === true) {
@@ -79,7 +122,11 @@ angular.module('gta.controllers', [])
       dsanon.record.getRecord("user/"+username).set({
         fullName: fullName,
         username: username,
-        password: password // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall
+        password: password, // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall,
+        coords: {
+          latitude: null,
+          longitude: null
+        }
       });
 
       $ionicPopup.alert({
@@ -89,30 +136,4 @@ angular.module('gta.controllers', [])
           $scope.loginModal.show();
       });
   };
-})
-
-.controller('CheckOnEveryoneCtrl', function($scope, $state, $geolocation, LoginData) {
-  if (LoginData.status !== true) {
-    $state.go('tab.welcome');
-  }
-
-  $geolocation.watchPosition({
-    timeout: 60000,
-    maximumAge: 250,
-    enableHighAccuracy: true
-  });
-  $scope.gpsError = $geolocation.position.error; // this becomes truthy, and has 'code' and 'message' if an error occurs
-  $scope.myPosition = $geolocation.position;
-
-  $scope.$watch('myPosition.coords', function (newValue, oldValue) {
-    if (newValue !== undefined && newValue.latitude && newValue.longitude) {
-      $scope.map = {
-        center: {
-          latitude: newValue.latitude,
-          longitude: newValue.longitude
-        },
-        zoom: 16
-      };
-    }
-  }, true);
 });

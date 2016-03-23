@@ -5,12 +5,10 @@ navigation history that also transitions its views in and out.
 -->
 <ion-tabs class="tabs-icon-top tabs-color-active-positive">
 
-  <!-- Dashboard Tab -->
   <ion-tab hidden="{{loginData.status}}" title="Login" icon-off="ion-lock-combination" icon-on="ion-lock-combination" href="#/tab/welcome">
     <ion-nav-view name="tab-welcome"></ion-nav-view>
   </ion-tab>
 
-  <!-- Chats Tab -->
   <ion-tab hidden="{{!(loginData.status)}}" title="Check on Everyone" icon-off="ion-ios-pulse" icon-on="ion-ios-pulse-strong" href="#/tab/coe">
     <ion-nav-view name="tab-coe"></ion-nav-view>
   </ion-tab>

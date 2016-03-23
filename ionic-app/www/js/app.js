@@ -1,11 +1,19 @@
-// Ionic Starter App
+/**
+  * Features that reamin to be implemented.
+  * 1. Add a friend's Username
+  * 2. Accept/reject incoming friend requests
+  * ✔ 3. Show my marker in the map and make it move as I move
+  * ✔ 4. Update my current coordinates into deepstream.io
+  * 5. Subscribe to friends' location and render their pins as they move in the map
+  * 6. Select friend from dropdown to get walking directions to their location
+  * 7. Display message that someone is walking to you when they are
+  * 8. If friend is moving then change the directions accordingly
+  * 9. A new "Smove" page in the app
+  * 10. Book a Smove for all friends after choosing each one with a radio button
+  * 11. Display a message in your screen when friend has requested a Smove for you
+**/
 
-// angular.module is a global place for creating, registering and retrieving Angular modules
-// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
-// the 2nd parameter is an array of 'requires'
-// 'starter.services' is found in services.js
-// 'starter.controllers' is found in controllers.js
-angular.module('gta', ['ionic', 'ngGeolocation', 'uiGmapgoogle-maps', 'gta.controllers', 'gta.services'])
+angular.module('gta', ['ionic', 'uiGmapgoogle-maps', 'gta.controllers', 'gta.services'])
 
 .run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -55,7 +63,7 @@ angular.module('gta', ['ionic', 'ngGeolocation', 'uiGmapgoogle-maps', 'gta.contr
       views: {
         'tab-coe': {
           templateUrl: 'templates/tab-coe.html',
-          controller: 'CheckOnEveryoneCtrl'
+          controller: 'WTFCtrl'
         }
       }
     });
@@ -67,7 +75,6 @@ angular.module('gta', ['ionic', 'ngGeolocation', 'uiGmapgoogle-maps', 'gta.contr
 .config(function(uiGmapGoogleMapApiProvider) {
     uiGmapGoogleMapApiProvider.configure({
         //    key: 'your api key',
-        v: '3.20', //defaults to latest 3.X anyhow
         libraries: 'weather,geometry,visualization'
     });
 });
