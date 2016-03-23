@@ -5,6 +5,8 @@
     "ionic": "driftyco/ionic-bower#1.2.4"
   },
   "dependencies": {
-    "deepstream.io-client-js": "^0.4.3"
+    "deepstream.io-client-js": "^0.4.3",
+    "ngGeolocation": "^0.0.8",
+    "angular-google-maps": "^2.3.2"
   }
 }
