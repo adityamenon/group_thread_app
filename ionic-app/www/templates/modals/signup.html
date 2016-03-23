@@ -1,0 +1,41 @@
+<ion-modal-view>
+  <ion-header-bar>
+    <h1 class="title">Signup</h1>
+  </ion-header-bar>
+
+  <ion-content>
+    <div class="row">
+      <div class="col">
+        <div class="list">
+          <label class="item item-input">
+            <input type="text" placeholder="Name" ng-model="signupForm.FullName">
+          </label>
+
+          <label class="item item-input">
+            <input type="text" placeholder="Username" ng-model="signupForm.Username">
+          </label>
+
+          <label class="item item-input">
+            <input type="password" placeholder="Password" ng-model="signupForm.Password">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="row text-center">
+
+      <div class="col">
+        <button class="button button-small button-positive" ng-click="execSignup()">
+          Signup
+        </button>
+      </div>
+
+      <div class="col">
+        <button class="button button-small button-assertive" ng-click="registerModal.hide()">
+          Cancel
+        </button>
+      </div>
+
+    </div>
+  </ion-content>
+</ion-modal-view>

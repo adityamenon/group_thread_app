@@ -1,0 +1,23 @@
+<ion-view view-title="Welcome">
+  <ion-content class="padding">
+    <h2>Welcome to the Group Thread App</h2>
+
+    <div class="row row-center responsive" ng-hide="{{loggedIn}}">
+        <div class="col col-center">
+            <div class="row">
+                <div class="col padding">
+                    <button class="button button-block button-positive" ng-click="loginModal.show()">
+                        Login
+                    </button>
+                </div>
+
+                <div class="col padding">
+                    <button class="button button-block button-balanced" ng-click="registerModal.show()">
+                        Register
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </ion-content>
+</ion-view>
