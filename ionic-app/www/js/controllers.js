@@ -39,10 +39,10 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
       $timeout(_ => {
 
         var friendPusher = () => {
-          $scope.friendPositions = [];
-
           $scope.$apply(_ => {
-            LoginData.user.friends.forEach(function (friend) {
+            $scope.friendPositions = [];
+
+            LoginData.dsRecord.get('friends').forEach(function (friend) {
                 $scope.friendPositions.push({
                   coords: friend.coords,
                   icon: "http://avatar.3sd.me/size/"+friend.username,
@@ -55,11 +55,14 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           console.log($scope.friendPositions);
         }
 
-        LoginData.dsRecord.subscribe('friends', () => {
+        LoginData.dsRecord.subscribe(() => {
+          console.log("calling the friend pusher")
           friendPusher();
         });
 
         friendPusher();
+
+
       });
 
       navigator.geolocation.watchPosition(
@@ -70,8 +73,6 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
 
             $scope.marker.coords.latitude = p.coords.latitude;
             $scope.marker.coords.longitude = p.coords.longitude;
-
-            $scope.marker.username = LoginData.user.username;
 
             LoginData.dsRecord.set('coords', {
               latitude: p.coords.latitude,
@@ -128,6 +129,12 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           $ionicPopup.alert({
               "template": "You're now Logged In!"
           }).then(function () {
+              LoginData.dsRecord.get('friends').forEach((friend, index) => {
+                dsanon.record.getRecord('user/'+friend.username).subscribe('coords', function (coords) {
+                  LoginData.dsRecord.set("friends["+index+"].coords", coords);
+                });
+              });
+
               record.subscribe(function (newData) {
                 console.log("Subscription update", newData)
                 LoginData.user = newData;
@@ -197,9 +204,6 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           targetRecord.set('friends', targetRecord.get('friends').concat(LoginData.user));
 
           LoginData.user = LoginData.dsRecord.get();
-
-          // targetRecord.subscribe('coords', (coords) => {
-          // });
 
           $ionicPopup.alert({
             template: "We've added your friend!"
