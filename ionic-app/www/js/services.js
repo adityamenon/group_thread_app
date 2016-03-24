@@ -5,6 +5,7 @@ angular.module('gta.services', [])
     status: false,
     user: {
       username: "anonymous"
-    }
+    },
+    dsRecord: null
   };
 });

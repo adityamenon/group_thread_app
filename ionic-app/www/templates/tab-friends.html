@@ -1,0 +1,22 @@
+<ion-view view-title="View Friends">
+  <ion-content>
+    <div class="card">
+        <div class="list">
+            <div class="item item-input-inset">
+                <label class="item-input-wrapper">
+                    <input type="text" placeholder="Friend's Username" ng-model="addFriends.username">
+                </label>
+
+                <button class="button button-small" ng-click="addFriend()">Add</button>
+            </div>
+
+        </div>
+    </div>
+
+      <ion-list>
+        <ion-item ng-repeat="friend in loginData.user.friends" item="friend">
+          {{friend.fullName}} ({{friend.username}})
+        </ion-item>
+      </ion-list>
+  </ion-content>
+</ion-view>

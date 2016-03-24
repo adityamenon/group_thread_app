@@ -66,7 +66,17 @@ angular.module('gta', ['ionic', 'uiGmapgoogle-maps', 'gta.controllers', 'gta.ser
           controller: 'WTFCtrl'
         }
       }
-    });
+    })
+
+  .state('tab.friends', {
+    url: '/friends',
+    views: {
+      'tab-friends': {
+        templateUrl: 'templates/tab-friends.html',
+        controller: 'FriendsCtrl'
+      }
+    }
+  })
 
   // if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise('/tab/welcome');

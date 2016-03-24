@@ -9,9 +9,12 @@ navigation history that also transitions its views in and out.
     <ion-nav-view name="tab-welcome"></ion-nav-view>
   </ion-tab>
 
-  <ion-tab hidden="{{!(loginData.status)}}" title="Check on Everyone" icon-off="ion-ios-pulse" icon-on="ion-ios-pulse-strong" href="#/tab/coe">
+  <ion-tab hidden="{{!(loginData.status)}}" title="Look up" icon-off="ion-ios-pulse" icon-on="ion-ios-pulse-strong" href="#/tab/coe">
     <ion-nav-view name="tab-coe"></ion-nav-view>
   </ion-tab>
 
-
+  <!-- <ion-tab hidden="{{!(loginData.status)}}" title="Friends" icon-off="ion-person" icon-on="ion-person" href="#/tab/friends"> -->
+  <ion-tab title="Friends" icon-off="ion-person" icon-on="ion-person" href="#/tab/friends">
+    <ion-nav-view name="tab-friends"></ion-nav-view>
+  </ion-tab>
 </ion-tabs>

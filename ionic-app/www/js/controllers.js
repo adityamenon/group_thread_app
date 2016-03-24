@@ -7,6 +7,7 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
       return LoginData;
     },
     function (newVal) {
+      console.log(newVal);
       $scope.loginData = newVal;
     });
 }).controller('WTFCtrl', function ($scope, $state, uiGmapGoogleMapApi) {
@@ -87,15 +88,19 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
       record = dsanon.record.getRecord('user/'+username);
 
       record.whenReady(function () {
-        record.discard();
-
         if (record.get("password") === password) {
           LoginData.status = true;
           LoginData.user = record.get();
+          LoginData.dsRecord = record;
 
           $ionicPopup.alert({
               "template": "You're now Logged In!"
           }).then(function () {
+              record.subscribe(function (newData) {
+                console.log("Subscription update", newData)
+                LoginData.user = newData;
+              });
+
               $scope.loginModal.hide();
               $state.go('tab.coe');
           });
@@ -106,6 +111,8 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
               $scope.loginModal.hide();
               $state.go('tab.welcome');
           });
+
+          record.discard();
         }
       });
   };
@@ -122,11 +129,12 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
       dsanon.record.getRecord("user/"+username).set({
         fullName: fullName,
         username: username,
-        password: password, // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall,
+        password: password, // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall
         coords: {
           latitude: null,
           longitude: null
-        }
+        },
+        friends: []
       });
 
       $ionicPopup.alert({
@@ -136,4 +144,36 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           $scope.loginModal.show();
       });
   };
-});
+}).controller('FriendsCtrl', function ($scope, $state, $ionicPopup, LoginData) {
+  if ($scope.loginData.status !== true) $state.go('tab.welcome');
+
+  $scope.addFriends = {};
+
+  $scope.addFriend = function () {
+    var targetUName = $scope.addFriends.username;
+    var targetRecord = dsanon.record.getRecord('user/'+targetUName);
+
+    targetRecord.whenReady(function () {
+      targetRecord.discard();
+
+      if(targetRecord.get('username') === targetUName) {
+        LoginData.dsRecord.set(
+            'friends',
+            LoginData.user.friends.concat(targetRecord.get())
+          );
+
+          targetRecord.set('friends', targetRecord.get('friends').concat(LoginData.user));
+
+          LoginData.user = LoginData.dsRecord.get();
+
+          $ionicPopup.alert({
+            template: "We've added your friend!"
+          });
+      } else {
+        $ionicPopup.alert({
+          template: "Cannot find that user."
+        });
+      }
+    });
+  }
+})
