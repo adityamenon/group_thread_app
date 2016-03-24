@@ -1,16 +1,12 @@
 var dsanon = new deepstream('127.0.0.1:6030').login();
 
-angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, LoginData) {
+angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, LoginData, LoginPromise) {
   $scope.loginData = LoginData;
-  $scope.$watch(
-    function () {
-      return LoginData;
-    },
-    function (newVal) {
-      console.log(newVal);
-      $scope.loginData = newVal;
-    });
-}).controller('WTFCtrl', function ($scope, $state, uiGmapGoogleMapApi) {
+
+  LoginPromise.promise.then(function () {
+    $scope.loginData = LoginData;
+  });
+}).controller('COECtrl', function ($scope, $state, $timeout, uiGmapGoogleMapApi, LoginData, LoginPromise) {
   var geoOptions = {
     enableHighAccuracy: true,
     maximumAge: 6000,
@@ -22,43 +18,69 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
       latitude: null,
       longitude: null
     },
-    zoom: 18
+    zoom: 12
   };
 
   $scope.marker = {
     coords: {
       latitude: null,
       longitude: null
-    }
+    },
+    username: LoginData.user.username
   };
+
+  $scope.friendPositions = [];
 
   if ($scope.loginData.status !== true) $state.go('tab.welcome');
 
   uiGmapGoogleMapApi.then(function (maps) {
-    navigator.geolocation.watchPosition(
-      function (p) {
-        console.log(p);
 
-        $scope.$apply(function () {
-          $scope.map.center.latitude = p.coords.latitude;
-          $scope.map.center.longitude = p.coords.longitude;
+    LoginPromise.promise.then(function () {
+      $timeout(_ => {
+        // LoginData.dsRecord.subscribe('friends', function (friends) {
+        //   $scope.$apply(function () {
+        //     $scope.friendPositions.concat()
+        //   });
+        // });
 
-          $scope.marker.coords.latitude = p.coords.latitude;
-          $scope.marker.coords.longitude = p.coords.longitude;
+        LoginData.user.friends.forEach(function (friend) {
+            $scope.friendPositions.push({
+              coords: friend.coords,
+              icon: "http://avatar.3sd.me/size/"+friend.username,
+              id: friend.username
+            });
 
-          dsanon.record.getRecord("user/"+$scope.loginData.user.username).set('coords.latitude', p.coords.latitude);
-          dsanon.record.getRecord("user/"+$scope.loginData.user.username).set('coords.longitude', p.coords.longitude);
+            console.log($scope.friendPositions);
         });
-      },
-      function (e) {
-        console.log(e);
-        $scope.gpsError = e;
-      },
-      geoOptions
-    );
+      });
+
+      navigator.geolocation.watchPosition(
+        function (p) {
+          $timeout(_ => {
+            $scope.map.center.latitude = p.coords.latitude;
+            $scope.map.center.longitude = p.coords.longitude;
+
+            $scope.marker.coords.latitude = p.coords.latitude;
+            $scope.marker.coords.longitude = p.coords.longitude;
+
+            $scope.marker.username = LoginData.user.username;
+
+            LoginData.dsRecord.set('coords', {
+              latitude: p.coords.latitude,
+              longitude: p.coords.longitude
+            });
+          });
+        },
+        (e) => {
+          console.log(e);
+          $scope.gpsError = e;
+        },
+        geoOptions
+      );
+    });
   });
 }).controller('WelcomeCtrl', function(
-  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData
+  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData, LoginPromise
 ) {
   if (LoginData.status === true) {
     $state.go('tab.coe');
@@ -92,6 +114,8 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           LoginData.status = true;
           LoginData.user = record.get();
           LoginData.dsRecord = record;
+
+          LoginPromise.resolve();
 
           $ionicPopup.alert({
               "template": "You're now Logged In!"

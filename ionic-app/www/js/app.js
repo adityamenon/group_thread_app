@@ -1,6 +1,6 @@
 /**
   * Features that reamin to be implemented.
-  * 1. Add a friend's Username
+  * ✔ 1. Add a friend's Username
   * 2. Accept/reject incoming friend requests
   * ✔ 3. Show my marker in the map and make it move as I move
   * ✔ 4. Update my current coordinates into deepstream.io
@@ -63,7 +63,7 @@ angular.module('gta', ['ionic', 'uiGmapgoogle-maps', 'gta.controllers', 'gta.ser
       views: {
         'tab-coe': {
           templateUrl: 'templates/tab-coe.html',
-          controller: 'WTFCtrl'
+          controller: 'COECtrl'
         }
       }
     })

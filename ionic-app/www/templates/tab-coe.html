@@ -6,8 +6,10 @@
 
     <div ng-hide="{{gpsError}}">
         <ui-gmap-google-map center='map.center' zoom='map.zoom'>
-            <ui-gmap-marker coords="marker.coords" idkey="loginData.user.username">
+            <ui-gmap-marker coords="marker.coords" idkey="marker.username">
             </ui-gmap-marker>
+
+            <ui-gmap-markers models='friendPositions' coords="'coords'" idkey="'id'" icon="'icon'"></ui-gmap-markers>
         </ui-gmap-google-map>
     </div>
   </ion-content>

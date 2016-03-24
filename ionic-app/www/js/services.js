@@ -8,4 +8,8 @@ angular.module('gta.services', [])
     },
     dsRecord: null
   };
-});
+})
+
+.factory('LoginPromise', function ($q) {
+  return $q.defer();
+})
