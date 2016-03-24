@@ -37,21 +37,29 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
 
     LoginPromise.promise.then(function () {
       $timeout(_ => {
-        // LoginData.dsRecord.subscribe('friends', function (friends) {
-        //   $scope.$apply(function () {
-        //     $scope.friendPositions.concat()
-        //   });
-        // });
 
-        LoginData.user.friends.forEach(function (friend) {
-            $scope.friendPositions.push({
-              coords: friend.coords,
-              icon: "http://avatar.3sd.me/size/"+friend.username,
-              id: friend.username
+        var friendPusher = () => {
+          $scope.friendPositions = [];
+
+          $scope.$apply(_ => {
+            LoginData.user.friends.forEach(function (friend) {
+                $scope.friendPositions.push({
+                  coords: friend.coords,
+                  icon: "http://avatar.3sd.me/size/"+friend.username,
+                  id: friend.username
+                });
             });
 
-            console.log($scope.friendPositions);
+          })
+
+          console.log($scope.friendPositions);
+        }
+
+        LoginData.dsRecord.subscribe('friends', () => {
+          friendPusher();
         });
+
+        friendPusher();
       });
 
       navigator.geolocation.watchPosition(
@@ -189,6 +197,9 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           targetRecord.set('friends', targetRecord.get('friends').concat(LoginData.user));
 
           LoginData.user = LoginData.dsRecord.get();
+
+          // targetRecord.subscribe('coords', (coords) => {
+          // });
 
           $ionicPopup.alert({
             template: "We've added your friend!"
