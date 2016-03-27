@@ -1,15 +1,15 @@
-angular.module('gta.services', [])
-
-.factory('LoginData', function() {
+angular.module('gta.services', []).factory('LoginData', function() {
   return {
     status: false,
     user: {
       username: "anonymous"
     },
-    dsRecord: null
+    dsUser: null,
+    dsCoords: null,
+    friendPositions: []
   };
-})
-
-.factory('LoginPromise', function ($q) {
+}).factory('LoginPromise', function ($q) {
   return $q.defer();
-})
+}).factory('CurrentFriendSubs', function () {
+  return [];
+});

@@ -1,3 +1,11 @@
+/**
+  * Alright, I'm seeing a lot of problems because of the way data is nested.
+  * ✔ First off, let's get rid of Scope completely for things that are updating in real time.
+  * ✔ Second, let's setup a new type of record called "coords/" which keeps track of all user's coords by Username
+  * ✔ Setup subscriptions on THOSE records.
+  * Let's see if that makes things any better.
+*/
+
 var dsanon = new deepstream('127.0.0.1:6030').login();
 
 angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, LoginData, LoginPromise) {
@@ -6,94 +14,10 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
   LoginPromise.promise.then(function () {
     $scope.loginData = LoginData;
   });
-}).controller('COECtrl', function ($scope, $state, $timeout, uiGmapGoogleMapApi, LoginData, LoginPromise) {
-  var geoOptions = {
-    enableHighAccuracy: true,
-    maximumAge: 6000,
-    timeout: 5400
-  };
-
-  $scope.map = {
-    center: {
-      latitude: null,
-      longitude: null
-    },
-    zoom: 12
-  };
-
-  $scope.marker = {
-    coords: {
-      latitude: null,
-      longitude: null
-    },
-    username: LoginData.user.username
-  };
-
-  $scope.friendPositions = [];
-
-  if ($scope.loginData.status !== true) $state.go('tab.welcome');
-
-  uiGmapGoogleMapApi.then(function (maps) {
-
-    LoginPromise.promise.then(function () {
-      $timeout(_ => {
-
-        var friendPusher = () => {
-          $scope.$apply(_ => {
-            $scope.friendPositions = [];
-
-            LoginData.dsRecord.get('friends').forEach(function (friend) {
-                $scope.friendPositions.push({
-                  coords: friend.coords,
-                  icon: "http://avatar.3sd.me/size/"+friend.username,
-                  id: friend.username
-                });
-            });
-
-          })
-
-          console.log($scope.friendPositions);
-        }
-
-        LoginData.dsRecord.subscribe(() => {
-          console.log("calling the friend pusher")
-          friendPusher();
-        });
-
-        friendPusher();
-
-
-      });
-
-      navigator.geolocation.watchPosition(
-        function (p) {
-          $timeout(_ => {
-            $scope.map.center.latitude = p.coords.latitude;
-            $scope.map.center.longitude = p.coords.longitude;
-
-            $scope.marker.coords.latitude = p.coords.latitude;
-            $scope.marker.coords.longitude = p.coords.longitude;
-
-            LoginData.dsRecord.set('coords', {
-              latitude: p.coords.latitude,
-              longitude: p.coords.longitude
-            });
-          });
-        },
-        (e) => {
-          console.log(e);
-          $scope.gpsError = e;
-        },
-        geoOptions
-      );
-    });
-  });
 }).controller('WelcomeCtrl', function(
-  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData, LoginPromise
+  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData, LoginPromise, CurrentFriendSubs
 ) {
-  if (LoginData.status === true) {
-    $state.go('tab.coe');
-  }
+  if (LoginData.status === true) $state.go('tab.coe');
 
   $ionicModal.fromTemplateUrl('templates/modals/signup.html', {
       scope: $scope,
@@ -114,31 +38,44 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
 
   $scope.execLogin = function () {
       var username = $scope.loginForm.Username,
-          password = $scope.loginForm.Password;
+          password = $scope.loginForm.Password,
+          loginRecord;
 
-      record = dsanon.record.getRecord('user/'+username);
+      loginRecord = dsanon.record.getRecord('user/'+username);
 
-      record.whenReady(function () {
-        if (record.get("password") === password) {
+      loginRecord.whenReady(function () {
+        if (loginRecord.get("password") === password) {
           LoginData.status = true;
-          LoginData.user = record.get();
-          LoginData.dsRecord = record;
+          LoginData.user = loginRecord.get();
+          LoginData.dsUser = loginRecord;
+          LoginData.dsCoords = dsanon.record.getRecord('coords/'+username);
 
           LoginPromise.resolve();
 
           $ionicPopup.alert({
               "template": "You're now Logged In!"
           }).then(function () {
-              LoginData.dsRecord.get('friends').forEach((friend, index) => {
-                dsanon.record.getRecord('user/'+friend.username).subscribe('coords', function (coords) {
-                  LoginData.dsRecord.set("friends["+index+"].coords", coords);
-                });
-              });
-
-              record.subscribe(function (newData) {
-                console.log("Subscription update", newData)
+              // As data about the user changes, make sure Angular remains updated
+              LoginData.dsUser.subscribe(function (newData) {
                 LoginData.user = newData;
               });
+
+              // ignoring existing subscriptions, subscribe to new coords as friends get added
+              LoginData.dsUser.subscribe('friends', function (newFriends) {
+                newFriends.forEach((newFriend) => {
+                  if (CurrentFriendSubs.indexOf(newFriend) < 0) {
+                    dsanon.record.getRecord('coords/'+newFriend).subscribe((newCoords) => {
+                        LoginData.friendPositions.push({
+                          coords: newCoords,
+                          icon: "http://avatar.3sd.me/size/"+newFriend,
+                          id: newFriend
+                        });
+                    });
+
+                    CurrentFriendSubs.concat(newFriend);
+                  }
+                });
+              }, true);
 
               $scope.loginModal.hide();
               $state.go('tab.coe');
@@ -151,7 +88,7 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
               $state.go('tab.welcome');
           });
 
-          record.discard();
+          loginRecord.discard();
         }
       });
   };
@@ -165,26 +102,95 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
         console.log("Anonymous Deepstream connection error: ", err);
       });
 
-      dsanon.record.getRecord("user/"+username).set({
-        fullName: fullName,
-        username: username,
-        password: password, // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall
-        coords: {
-          latitude: null,
-          longitude: null
-        },
-        friends: []
-      });
+      var newUserRecord = dsanon.record.getRecord("user/"+username)
 
-      $ionicPopup.alert({
-          "template": "Registration completed! Please login now."
-      }).then(function () {
-          $scope.registerModal.hide();
-          $scope.loginModal.show();
+      newUserRecord.whenReady(_ => {
+        newUserRecord.set({
+          fullName: fullName,
+          username: username,
+          password: password, // This is a PoC, there are a LOT of other security concerns as well - needs more architecting overall
+          friends: []
+        });
+
+        newUserRecord.discard();
+
+        var newCoordsRecord = dsanon.record.getRecord("coords/"+username);
+
+        newCoordsRecord.whenReady(_ => {
+          newCoordsRecord.set({
+            latitude: null,
+            longitude: null
+          });
+
+          newCoordsRecord.discard();
+
+          $ionicPopup.alert({
+              "template": "Registration completed! Please login now."
+          }).then(function () {
+              $scope.registerModal.hide();
+              $scope.loginModal.show();
+          });
+        });
       });
   };
+}).controller('COECtrl', function ($scope, $state, $timeout, uiGmapGoogleMapApi, LoginData, LoginPromise) {
+
+  if (LoginData.status !== true) $state.go('tab.welcome');
+
+  var geoOptions = {
+    enableHighAccuracy: true,
+    maximumAge: 6000,
+    timeout: 5400
+  };
+
+  _.extend
+
+  $scope.map = {
+    center: {
+      latitude: null,
+      longitude: null
+    },
+    zoom: 12
+  };
+
+  $scope.marker = {
+    coords: {
+      latitude: null,
+      longitude: null
+    },
+    username: LoginData.user.username
+  };
+
+  $scope.friendPositions = LoginData.friendPositions;
+
+  uiGmapGoogleMapApi.then(function (maps) {
+
+    LoginPromise.promise.then(function () {
+      navigator.geolocation.watchPosition(
+        function (p) {
+          $timeout(_ => {
+            $scope.map.center.latitude = p.coords.latitude;
+            $scope.map.center.longitude = p.coords.longitude;
+
+            $scope.marker.coords.latitude = p.coords.latitude;
+            $scope.marker.coords.longitude = p.coords.longitude;
+
+            LoginData.dsCoords.set({
+              latitude: p.coords.latitude,
+              longitude: p.coords.longitude
+            });
+          });
+        },
+        (e) => {
+          console.log(e);
+          $scope.gpsError = e;
+        },
+        geoOptions
+      );
+    });
+  });
 }).controller('FriendsCtrl', function ($scope, $state, $ionicPopup, LoginData) {
-  if ($scope.loginData.status !== true) $state.go('tab.welcome');
+  if (LoginData.status !== true) $state.go('tab.welcome');
 
   $scope.addFriends = {};
 
@@ -193,17 +199,17 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
     var targetRecord = dsanon.record.getRecord('user/'+targetUName);
 
     targetRecord.whenReady(function () {
-      targetRecord.discard();
-
       if(targetRecord.get('username') === targetUName) {
-        LoginData.dsRecord.set(
+        LoginData.dsUser.set(
             'friends',
-            LoginData.user.friends.concat(targetRecord.get())
+            LoginData.user.friends.concat(targetRecord.get('username'))
           );
 
-          targetRecord.set('friends', targetRecord.get('friends').concat(LoginData.user));
+          targetRecord.set('friends', targetRecord.get('friends').concat(LoginData.user.username));
 
-          LoginData.user = LoginData.dsRecord.get();
+          LoginData.user = LoginData.dsUser.get();
+
+          targetRecord.discard();
 
           $ionicPopup.alert({
             template: "We've added your friend!"
