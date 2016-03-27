@@ -56,23 +56,29 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
               "template": "You're now Logged In!"
           }).then(function () {
               // As data about the user changes, make sure Angular remains updated
-              LoginData.dsUser.subscribe(function (newData) {
+              LoginData.dsUser.subscribe((newData) => {
                 LoginData.user = newData;
               });
 
               // ignoring existing subscriptions, subscribe to new coords as friends get added
-              LoginData.dsUser.subscribe('friends', function (newFriends) {
+              LoginData.dsUser.subscribe('friends', (newFriends) => {
                 newFriends.forEach((newFriend) => {
                   if (CurrentFriendSubs.indexOf(newFriend) < 0) {
-                    dsanon.record.getRecord('coords/'+newFriend).subscribe((newCoords) => {
-                        LoginData.friendPositions.push({
-                          coords: newCoords,
-                          icon: "http://avatar.3sd.me/size/"+newFriend,
-                          id: newFriend
-                        });
+                    var friendCoordsRecord = dsanon.record.getRecord('coords/'+newFriend);
+
+                    LoginData.friendPositions.push({
+                      coords: friendCoordsRecord.get(),
+                      icon: "http://avatar.3sd.me/size/"+newFriend,
+                      id: newFriend
                     });
 
-                    CurrentFriendSubs.concat(newFriend);
+                    CurrentFriendSubs = CurrentFriendSubs.concat(newFriend);
+
+                    // when friends move, update angular as well
+                    friendCoordsRecord.subscribe((newCoords) => {
+                      var newFriendIndex = CurrentFriendSubs.indexOf(newFriend)
+                      if (newFriendIndex > -1) LoginData.friendPositions[newFriendIndex].coords = newCoords;
+                    });
                   }
                 });
               }, true);
