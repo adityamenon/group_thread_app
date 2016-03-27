@@ -14,8 +14,10 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
   LoginPromise.promise.then(function () {
     $scope.loginData = LoginData;
   });
+
+  $scope.friendPositions = LoginData.friendPositions;
 }).controller('WelcomeCtrl', function(
-  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, LoginData, LoginPromise, CurrentFriendSubs
+  $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, $timeout, LoginData, LoginPromise, CurrentFriendSubs
 ) {
   if (LoginData.status === true) $state.go('tab.coe');
 
@@ -55,33 +57,36 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           $ionicPopup.alert({
               "template": "You're now Logged In!"
           }).then(function () {
-              // As data about the user changes, make sure Angular remains updated
-              LoginData.dsUser.subscribe((newData) => {
-                LoginData.user = newData;
+              $timeout(_ => {
+                // As data about the user changes, make sure Angular remains updated
+                LoginData.dsUser.subscribe((newData) => {
+                  var newFriends = newData.friends;
+                  $scope.$apply(_ => {
+                    LoginData.user = newData;
+
+                    // ignoring existing subscriptions, subscribe to new coords as friends get added
+                    newFriends.forEach((newFriend) => {
+                      if (CurrentFriendSubs.indexOf(newFriend) < 0) {
+                        var friendCoordsRecord = dsanon.record.getRecord('coords/'+newFriend);
+
+                        LoginData.friendPositions.push({
+                          coords: friendCoordsRecord.get(),
+                          icon: "http://avatar.3sd.me/size/"+newFriend,
+                          id: newFriend
+                        });
+
+                        CurrentFriendSubs = CurrentFriendSubs.concat(newFriend);
+
+                        // when friends move, update angular as well
+                        friendCoordsRecord.subscribe((newCoords) => {
+                          var newFriendIndex = CurrentFriendSubs.indexOf(newFriend)
+                          if (newFriendIndex > -1) LoginData.friendPositions[newFriendIndex].coords = newCoords;
+                        });
+                      }
+                    });
+                  });
+                }, true);
               });
-
-              // ignoring existing subscriptions, subscribe to new coords as friends get added
-              LoginData.dsUser.subscribe('friends', (newFriends) => {
-                newFriends.forEach((newFriend) => {
-                  if (CurrentFriendSubs.indexOf(newFriend) < 0) {
-                    var friendCoordsRecord = dsanon.record.getRecord('coords/'+newFriend);
-
-                    LoginData.friendPositions.push({
-                      coords: friendCoordsRecord.get(),
-                      icon: "http://avatar.3sd.me/size/"+newFriend,
-                      id: newFriend
-                    });
-
-                    CurrentFriendSubs = CurrentFriendSubs.concat(newFriend);
-
-                    // when friends move, update angular as well
-                    friendCoordsRecord.subscribe((newCoords) => {
-                      var newFriendIndex = CurrentFriendSubs.indexOf(newFriend)
-                      if (newFriendIndex > -1) LoginData.friendPositions[newFriendIndex].coords = newCoords;
-                    });
-                  }
-                });
-              }, true);
 
               $scope.loginModal.hide();
               $state.go('tab.coe');
@@ -149,8 +154,6 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
     timeout: 5400
   };
 
-  _.extend
-
   $scope.map = {
     center: {
       latitude: null,
@@ -167,10 +170,7 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
     username: LoginData.user.username
   };
 
-  $scope.friendPositions = LoginData.friendPositions;
-
   uiGmapGoogleMapApi.then(function (maps) {
-
     LoginPromise.promise.then(function () {
       navigator.geolocation.watchPosition(
         function (p) {
