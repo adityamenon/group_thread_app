@@ -8,14 +8,14 @@
 
 var dsanon = new deepstream('127.0.0.1:6030').login();
 
-angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, LoginData, LoginPromise) {
+angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, $rootScope, LoginData, LoginPromise) {
   $scope.loginData = LoginData;
 
   LoginPromise.promise.then(function () {
     $scope.loginData = LoginData;
   });
 
-  $scope.friendPositions = LoginData.friendPositions;
+  $rootScope.friendPositions = [];
 }).controller('WelcomeCtrl', function(
   $rootScope, $scope, $ionicModal, $http, $ionicPopup, $state, $timeout, LoginData, LoginPromise, CurrentFriendSubs
 ) {
@@ -57,11 +57,10 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
           $ionicPopup.alert({
               "template": "You're now Logged In!"
           }).then(function () {
-              $timeout(_ => {
+            $timeout(_ => {
                 // As data about the user changes, make sure Angular remains updated
                 LoginData.dsUser.subscribe((newData) => {
                   var newFriends = newData.friends;
-                  $scope.$apply(_ => {
                     LoginData.user = newData;
 
                     // ignoring existing subscriptions, subscribe to new coords as friends get added
@@ -69,24 +68,35 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, L
                       if (CurrentFriendSubs.indexOf(newFriend) < 0) {
                         var friendCoordsRecord = dsanon.record.getRecord('coords/'+newFriend);
 
-                        LoginData.friendPositions.push({
-                          coords: friendCoordsRecord.get(),
-                          icon: "http://avatar.3sd.me/size/"+newFriend,
-                          id: newFriend
-                        });
+                        $rootScope.$apply(_ => {
 
-                        CurrentFriendSubs = CurrentFriendSubs.concat(newFriend);
+                          $rootScope.friendPositions.push({
+                            coords: friendCoordsRecord.get(),
+                            icon: "http://avatar.3sd.me/size/"+newFriend,
+                            id: newFriend
+                          });
 
-                        // when friends move, update angular as well
-                        friendCoordsRecord.subscribe((newCoords) => {
-                          var newFriendIndex = CurrentFriendSubs.indexOf(newFriend)
-                          if (newFriendIndex > -1) LoginData.friendPositions[newFriendIndex].coords = newCoords;
-                        });
+                          CurrentFriendSubs = CurrentFriendSubs.concat(newFriend);
+
+                          // when friends move, update angular as well
+                          friendCoordsRecord.subscribe((newCoords) => {
+                            var newFriendIndex = CurrentFriendSubs.indexOf(newFriend)
+                            if (newFriendIndex > -1) {
+                              $timeout(_ => {
+                                $rootScope.$apply(_ => {
+                                  $rootScope.friendPositions[newFriendIndex].coords = newCoords;
+                                  console.log(LoginData.user.username, "has seen that", newFriend, "has moved");
+                                })
+                              })
+                            }
+                          });
+
+                        })
                       }
                     });
-                  });
                 }, true);
-              });
+            })
+
 
               $scope.loginModal.hide();
               $state.go('tab.coe');
