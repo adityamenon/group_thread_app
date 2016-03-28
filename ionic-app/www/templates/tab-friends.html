@@ -15,7 +15,7 @@
 
       <ion-list>
         <ion-item ng-repeat="friend in loginData.user.friends" item="friend">
-          {{friend.fullName}} ({{friend.username}})
+          {{getFriendFullName(friend)}} ({{friend}})
         </ion-item>
       </ion-list>
   </ion-content>

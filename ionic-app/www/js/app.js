@@ -4,7 +4,7 @@
   * 2. Accept/reject incoming friend requests
   * ✔ 3. Show my marker in the map and make it move as I move
   * ✔ 4. Update my current coordinates into deepstream.io
-  * 5. Subscribe to friends' location and render their pins as they move in the map
+  * ✔ 5. Subscribe to friends' location and render their pins as they move in the map
   * 6. Select friend from dropdown to get walking directions to their location
   * 7. Display message that someone is walking to you when they are
   * 8. If friend is moving then change the directions accordingly

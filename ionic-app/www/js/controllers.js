@@ -86,16 +86,16 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, $
                                 $rootScope.$apply(_ => {
                                   $rootScope.friendPositions[newFriendIndex].coords = newCoords;
                                   console.log(LoginData.user.username, "has seen that", newFriend, "has moved");
-                                })
-                              })
+                                });
+                              });
                             }
                           });
 
-                        })
+                        });
                       }
                     });
                 }, true);
-            })
+            });
 
 
               $scope.loginModal.hide();
@@ -209,6 +209,14 @@ angular.module('gta.controllers', []).controller('MainCtrl', function ($scope, $
   if (LoginData.status !== true) $state.go('tab.welcome');
 
   $scope.addFriends = {};
+
+  $scope.getFriendFullName = (username) => {
+    var tempFriendRec = dsanon.record.getRecord('user/'+username),
+        friendFullName = tempFriendRec.get('fullName');
+
+    tempFriendRec.discard();
+    return friendFullName;
+  }
 
   $scope.addFriend = function () {
     var targetUName = $scope.addFriends.username;
